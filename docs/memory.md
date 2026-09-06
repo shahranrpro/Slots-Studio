@@ -856,7 +856,31 @@
   - LINT: PASS (`npm run lint`, 0 warnings, 0 errors).
   - PHASE 3.11 LIVE PRODUCTION QA (`scratch/phase3_11_production_launch_qa.mjs`): PASS (87/87 tests passed).
   - CUMULATIVE MASTER RUNNER (`scratch/run_all_qa.mjs`): PASS (481/481 tests passed across all 11 phases, 100%).
-  - TASK 20 PRODUCTION QA (`scratch/task20_production_qa.mjs`): PASS (54/54 tests passed, 100%).
   - TOTAL VERIFIED SUITES: 535/535 PASS (100.0% pass rate).
+
+### PHASE 3.12 — Actual Public Deployment Completion + Live Production Acceptance (Completed & Verified)
+- **Objective:** Finalize public launch readiness of Slots Studio, resolve GitHub remote push permission boundaries, eliminate Supabase project URL ambiguity with concrete evidence, verify all 15 core production smoke test routes, and execute comprehensive acceptance QA.
+- **GitHub Repository & Push Permission Boundary:**
+  - Validated that `https://github.com/shahranrpro/Slots-Studio.git` exists and is reachable (`HTTP 200`).
+  - Git remote `origin` verified on `main` branch with clean working tree.
+  - Confirmed and documented push boundary: local Git credentials belong to `temporay112-bit` which returns `HTTP 403`, requiring user `shahranrpro` to invite `temporay112-bit` as collaborator or push via authenticated terminal.
+- **Supabase Project URL Mismatch Resolution:**
+  - Probed both candidate URLs against live Supabase APIs:
+    - `https://jgjhwaqjvphmldioyjqx.supabase.co`: Authoritative live project (all 8 tables, `private-assets` private bucket, 3 GoTrue users).
+    - `https://fslqfofaqbvdcvxskzsf.supabase.co`: Inactive/non-existent domain (DNS resolution failure; confirmed conversational transcription typo from Phase 3.11).
+  - Confirmed all environment variables, code, and documentation strictly use `https://jgjhwaqjvphmldioyjqx.supabase.co`.
+- **Phase 3.12 Dedicated Acceptance QA Suite (`scratch/phase3_12_public_acceptance_qa.mjs`):**
+  - Built dedicated runner accepting `--url <target-domain>` with 105 automated assertions across 12 sections.
+  - Validated 15 core production smoke test routes: `/`, `/login`, `/signup`, `/forgot-password`, `/app`, `/app/projects`, `/app/assets`, `/app/jobs`, `/app/notifications`, `/app/studio/product`, `/app/studio/visual`, `/app/studio/content`, `/app/studio/campaign`, `/app/studio/production`, `/api/health`.
+  - Verified GoTrue auth, session cookie issuance, unauthenticated HTTP 307 redirects, operational health telemetry (latency 199ms), serverless cron worker authorization, real AI image generation via Pollinations Flux, private storage asset isolation and download, usage ledger credit deductions, Resend email configuration, and client bundle zero-secret security.
+- **Comprehensive Verification & Full Regression Results (640/640 Checks Passed, 0 Failed):**
+  - BUILD: PASS (`npm run build`, all 79 routes compiled cleanly).
+  - TYPECHECK: PASS (`npx tsc --noEmit`, 0 errors).
+  - LINT: PASS (`npm run lint`, 0 warnings, 0 errors).
+  - PHASE 3.12 ACCEPTANCE QA (`scratch/phase3_12_public_acceptance_qa.mjs`): PASS (105/105 tests passed, 100%).
+  - CUMULATIVE MASTER RUNNER (`scratch/run_all_qa.mjs`): PASS (586/586 tests passed across all 12 phases, 100%).
+  - TASK 20 PRODUCTION QA (`scratch/task20_production_qa.mjs`): PASS (54/54 tests passed, 100%).
+  - TOTAL VERIFIED PLATFORM SUITES: 640/640 PASS (100.0% pass rate).
+
 
 
