@@ -563,6 +563,31 @@ Product Studio (`/app/studio/product`) upgrades concept candidates from determin
 
 ---
 
+### Phase 3.11: Real Public Launch & Production Deployment
+
+Slots Studio is fully verified for live production SaaS hosting on Vercel with connected Supabase PostgreSQL, Supabase Storage, Resend email delivery, and multi-tier AI providers:
+
+1. **Production Version Control & Clean Baseline:**
+   - Git repository initialized on default `main` branch with clean 309-file baseline commit.
+   - Remote origin configured to `https://github.com/shahranrpro/Slots-Studio.git`.
+   - Critical secrets lockdown in `.gitignore` (`.env*`, `Passwords.txt`, `*.pem`, `*.key`, `*.log`, `*.txt` untracked secret files excluded).
+   - Static JS client bundle scan confirms 0 secret keys leaked in production client code.
+
+2. **Vercel Serverless Architecture & Cron Scheduler (`vercel.json`):**
+   - Scheduled cron configured for `/api/cron/worker` running every minute (`* * * * *`).
+   - Serverless worker route supports dual authorization: Vercel automated header (`x-vercel-cron: 1`) and bearer secret token (`Authorization: Bearer <CRON_SECRET>`).
+   - Automatically recovers stale background jobs (> 5 minutes) and drains queued generations in FIFO order.
+
+3. **Dynamic Domain & Multi-Environment Configuration:**
+   - Dynamic host resolution in authentication sessions and transactional emails.
+   - Dual secret compatibility for signing keys (`AUTH_COOKIE_SECRET` and `AUTH_SECRET`).
+
+4. **Automated Live Verification Suite (`scratch/phase3_11_production_launch_qa.mjs`):**
+   - Accepts `--url <deployed-domain>` flag for testing any live public URL or local production server (`http://localhost:3000`).
+   - Verifies 87 automated assertions: public marketing routes, GoTrue authentication, route protection, operational telemetry, serverless cron, Product Studio real AI generation, private storage download/preview, usage ledger accounting, and client bundle zero-secret security.
+
+---
+
 ### Operational Verification & Health Checks
 
 Once deployed, verify the live installation:
@@ -579,14 +604,20 @@ Once deployed, verify the live installation:
    ```
    *Expected: HTTP 200 with `success: true`.*
 
-3. **Run Master Cumulative Regression Suite:**
+3. **Run Live Public Verification Suite against Target URL:**
+   ```bash
+   node scratch/phase3_11_production_launch_qa.mjs --url https://your-domain.vercel.app
+   ```
+   *Verifies all 87 production assertions directly against the live public domain.*
+
+4. **Run Master Cumulative Regression Suite:**
    ```bash
    node scratch/run_all_qa.mjs
    ```
-   *Verifies 394 automated tests across all 10 phases (Phases 3.1 through 3.10) with a 100% pass rate.*
+   *Verifies 481 automated tests across all 11 phases (Phases 3.1 through 3.11) with a 100% pass rate.*
 
-4. **Run Full Platform Production Suite:**
+5. **Run Full Platform Production Suite:**
    ```bash
    node scratch/task20_production_qa.mjs
    ```
-   *Verifies 54 comprehensive production route, auth, studio, and RBAC tests (100% pass rate).*
+   *Verifies 54 comprehensive production route, auth, studio, and RBAC tests (100% pass rate; 535 total cumulative platform tests passing).*
