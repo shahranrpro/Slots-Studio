@@ -12,11 +12,12 @@ export const dynamic = "force-dynamic";
  * to scavenge and drain pending QUEUED background jobs in serverless hosting environments.
  */
 export async function GET(request: Request) {
-  // 1. Security: Authenticate via CRON_SECRET if configured in production
+  // 1. Security: Authenticate via CRON_SECRET or Vercel Cron header if configured in production
   const authHeader = request.headers.get("authorization");
+  const isVercelCron = request.headers.get("x-vercel-cron") === "1";
   const cronSecret = process.env.CRON_SECRET;
 
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  if (cronSecret && !isVercelCron && authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
