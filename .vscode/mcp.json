@@ -1,0 +1,9 @@
+{
+	"servers": {
+		"BetterBugs Doc": {
+			"url": "https://docs.betterbugs.io/~gitbook/mcp",
+			"type": "http"
+		}
+	},
+	"inputs": []
+}

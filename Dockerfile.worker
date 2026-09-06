@@ -1,0 +1,19 @@
+# Production Worker Daemon Container for Slots Studio
+FROM node:22-alpine AS base
+WORKDIR /app
+RUN apk add --no-cache libc6-compat
+
+# Install production dependencies
+COPY package.json package-lock.json* ./
+RUN npm ci --omit=dev
+
+# Copy application source & worker scripts
+COPY . .
+
+ENV NODE_ENV=production
+
+# Graceful signal handling
+STOPSIGNAL SIGTERM
+
+# Start continuous worker daemon with atomic locks
+CMD ["node", "scripts/worker-daemon.mjs"]
