@@ -59,7 +59,7 @@ export async function findProductConceptsByProjectId(
 
   return rows
     .map((r) => r.data as ProductConcept)
-    .filter((c) => c && c.projectId === projectId);
+    .filter((c) => c && c.projectId === projectId && c.workspaceId === workspaceId);
 }
 
 export async function updateProductConceptStatusDb(
@@ -73,7 +73,10 @@ export async function updateProductConceptStatusDb(
     .select("*")
     .eq("output_type", "PRODUCT_CONCEPT");
 
-  const target = rows?.find((r) => r.data?.id === conceptId);
+  // Only update records that belong to this workspace
+  const target = rows?.find(
+    (r) => r.data?.id === conceptId && r.data?.workspaceId === workspaceId
+  );
   if (!target) return false;
 
   const updatedData = {
@@ -122,7 +125,7 @@ export async function findVisualOutputsByProjectId(
 
   return rows
     .map((r) => r.data as VisualOutput)
-    .filter((v) => v && v.projectId === projectId);
+    .filter((v) => v && v.projectId === projectId && v.workspaceId === workspaceId);
 }
 
 export async function updateVisualOutputStatusDb(
@@ -136,7 +139,10 @@ export async function updateVisualOutputStatusDb(
     .select("*")
     .eq("output_type", "VISUAL_OUTPUT");
 
-  const target = rows?.find((r) => r.data?.id === outputId);
+  // Only update records that belong to this workspace
+  const target = rows?.find(
+    (r) => r.data?.id === outputId && r.data?.workspaceId === workspaceId
+  );
   if (!target) return false;
 
   const updatedData = {
@@ -184,6 +190,7 @@ export async function findContentOutputsByProjectId(
 ): Promise<ContentOutput[]> {
   const supabase = createAdminSupabaseClient();
 
+  // Scope strictly to workspace_id — never return other workspaces' content
   const { data: rows, error } = await supabase
     .from("content_items")
     .select("*")
@@ -196,7 +203,7 @@ export async function findContentOutputsByProjectId(
       id: r.id,
       workspaceId: r.workspace_id,
       projectId: r.project_id || projectId,
-      slotCode: "SS-02481",
+      slotCode: "",
       jobId: "",
       contentType: r.content_type as ContentOutput["contentType"],
       title: r.title,
@@ -242,6 +249,7 @@ export async function findCampaignsByProjectId(
 ): Promise<Campaign[]> {
   const supabase = createAdminSupabaseClient();
 
+  // Scope strictly to workspace_id
   const { data: rows, error } = await supabase
     .from("campaigns")
     .select("*")
@@ -253,7 +261,7 @@ export async function findCampaignsByProjectId(
     id: r.id,
     workspaceId: r.workspace_id,
     projectId: r.project_id || projectId,
-    slotCode: "SS-02481",
+    slotCode: "",
     name: r.name,
     objective: r.objective as Campaign["objective"],
     targetChannels: r.channels as Campaign["targetChannels"],
@@ -296,13 +304,30 @@ export async function findProductionSpecsByProjectId(
 ): Promise<TechPack[]> {
   const supabase = createAdminSupabaseClient();
 
+  // Scope through project join: only return specs for projects in this workspace
+  // production_specs links to projects(id), and projects links to workspace_id
   const { data: rows, error } = await supabase
     .from("production_specs")
-    .select("*");
+    .select("*, projects!inner(workspace_id)")
+    .eq("projects.workspace_id", workspaceId);
 
-  if (error || !rows) return [];
+  if (error || !rows) {
+    // Fallback: filter tech_pack data for workspace match
+    const { data: allRows } = await supabase
+      .from("production_specs")
+      .select("*");
+    if (!allRows) return [];
+    return allRows
+      .map((r) => r.tech_pack as TechPack)
+      .filter(
+        (tp) =>
+          tp &&
+          tp.projectId === projectId &&
+          (tp as unknown as Record<string, unknown>).workspaceId === workspaceId
+      );
+  }
 
   return rows
     .map((r) => r.tech_pack as TechPack)
-    .filter((tp) => tp && (tp.projectId === projectId || !isUuid(projectId)));
+    .filter((tp) => tp && tp.projectId === projectId);
 }

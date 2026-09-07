@@ -94,4 +94,21 @@ export class DevEmailProviderAdapter implements TransactionalEmailProvider {
       timestamp: new Date().toISOString(),
     };
   }
+
+  public async sendRaw(params: {
+    to: string;
+    subject: string;
+    html: string;
+    text: string;
+  }): Promise<EmailSendResult> {
+    this.logMockDelivery(params.to, params.subject, "RAW_ADMIN_NOTIFICATION");
+
+    return {
+      success: true,
+      messageId: `dev_mock_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      provider: this.name,
+      status: "DEV_PREVIEW_MOCK",
+      timestamp: new Date().toISOString(),
+    };
+  }
 }

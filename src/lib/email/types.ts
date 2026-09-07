@@ -10,7 +10,10 @@ export type EmailTemplateType =
   | "WORKSPACE_INVITE"
   | "JOB_COMPLETED"
   | "JOB_FAILED"
-  | "WELCOME";
+  | "WELCOME"
+  | "ADMIN_SIGNUP_NOTIFICATION"
+  | "ADMIN_LOGIN_NOTIFICATION";
+
 
 export type EmailDeliveryStatus =
   | "ACCEPTED"
@@ -93,4 +96,6 @@ export interface TransactionalEmailProvider {
   sendJobCompleted(params: JobCompletedEmailParams): Promise<EmailSendResult>;
   sendJobFailed(params: JobFailedEmailParams): Promise<EmailSendResult>;
   sendWelcome(params: WelcomeEmailParams): Promise<EmailSendResult>;
+  sendRaw(params: { to: string; subject: string; html: string; text: string }): Promise<EmailSendResult>;
 }
+

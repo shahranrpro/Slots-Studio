@@ -124,14 +124,7 @@ export async function findAssetById(
 
   const { data, error } = await query.maybeSingle();
   if (error || !data) {
-    // Fallback search by id without workspace constraint
-    if (idIsUuid) {
-      const { data: fb } = await supabase.from("assets").select("*").eq("id", id).maybeSingle();
-      if (fb) return toDomain(fb as AssetDbRow);
-    }
-    const { data: fbLegacy } = await supabase.from("assets").select("*").contains("metadata", { legacyId: id }).maybeSingle();
-    if (fbLegacy) return toDomain(fbLegacy as AssetDbRow);
-
+    // Strictly enforce workspace isolation — never search across the entire database
     return null;
   }
 

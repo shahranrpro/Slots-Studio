@@ -20,8 +20,12 @@ let isSeeded = false;
 let seedingPromise: Promise<void> | null = null;
 
 export async function ensureDatabaseSeeded(): Promise<void> {
+  // CRITICAL: Never run dev seed in production — dev IDs must never exist in live DB
+  if (process.env.NODE_ENV === "production") return;
+
   if (isSeeded) return;
   if (seedingPromise) return seedingPromise;
+
 
   seedingPromise = (async () => {
     try {

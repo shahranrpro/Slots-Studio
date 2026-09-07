@@ -230,6 +230,9 @@ export interface AuthenticatedWorkspaceContext {
  * Authoritative server-side workspace and session resolution.
  * Guarantees that any authenticated user resolves a valid user, active workspace,
  * and stable onboarding state consistently across all dashboard routes.
+ *
+ * If the user has no workspaces (e.g. first login after signup), a personal
+ * workspace is automatically provisioned here as a safety net.
  */
 export async function resolveAuthenticatedWorkspaceContext(
   session: Session | null
@@ -239,11 +242,27 @@ export async function resolveAuthenticatedWorkspaceContext(
   const user = await getUserFromSession(session);
   if (!user) return null;
 
-  const workspaces = await getUserWorkspaces(session.userId);
+  let workspaces = await getUserWorkspaces(session.userId);
+
+  // Safety net: if the user somehow has no workspace (e.g. signup race condition
+  // or in-memory store cleared), provision a personal workspace now.
+  if (workspaces.length === 0) {
+    try {
+      const displayName = user.name || user.email.split("@")[0] || "My Workspace";
+      const result = await createWorkspaceForUser(session.userId, `${displayName}'s Workspace`);
+      if (result.success && result.data?.workspace) {
+        workspaces = [result.data.workspace];
+      }
+    } catch (err) {
+      console.error("[workspace] Failed to auto-provision workspace for user:", err);
+      return null;
+    }
+
+    // Still no workspace after provisioning attempt
+    if (workspaces.length === 0) return null;
+  }
+
   const activeWorkspace = workspaces[0];
-
-  if (!activeWorkspace) return null;
-
   const onboarding = await getUserOnboardingState(session.userId);
 
   return {

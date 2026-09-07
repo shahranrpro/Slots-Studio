@@ -100,4 +100,13 @@ export class ResendEmailProvider implements TransactionalEmailProvider {
     const { subject, html, text } = renderWelcomeEmail(params);
     return this.dispatchEmail(params.to, subject, html, text);
   }
+
+  public async sendRaw(params: {
+    to: string;
+    subject: string;
+    html: string;
+    text: string;
+  }): Promise<EmailSendResult> {
+    return this.dispatchEmail(params.to, params.subject, params.html, params.text);
+  }
 }

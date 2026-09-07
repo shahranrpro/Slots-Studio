@@ -143,13 +143,7 @@ export async function findJobById(
 
   const { data, error } = await query.maybeSingle();
   if (error || !data) {
-    if (idIsUuid) {
-      const { data: fb } = await supabase.from("generation_jobs").select("*").eq("id", id).maybeSingle();
-      if (fb) return toDomain(fb as JobDbRow);
-    }
-    const { data: fbLegacy } = await supabase.from("generation_jobs").select("*").contains("parameters", { legacyId: id }).maybeSingle();
-    if (fbLegacy) return toDomain(fbLegacy as JobDbRow);
-
+    // Strictly enforce workspace isolation — never search across the entire database
     return null;
   }
 

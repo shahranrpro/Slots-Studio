@@ -83,7 +83,7 @@ export async function findProjectBySlotCode(
   await ensureSeededProjectsStore();
   for (const proj of projectsMap.values()) {
     if (
-      (proj.workspaceId === workspaceId || proj.workspaceId === "ws_dev_seed") &&
+      proj.workspaceId === workspaceId &&
       proj.slotCode.toUpperCase() === slotCode.toUpperCase()
     ) {
       return proj;
@@ -108,10 +108,11 @@ export async function findProjectsByWorkspaceId(
   const allWorkspaceProjects: Project[] = [];
 
   for (const proj of projectsMap.values()) {
-    if (proj.workspaceId === workspaceId || (proj.workspaceId === "ws_dev_seed" && !allWorkspaceProjects.some(p => p.id === proj.id))) {
+    if (proj.workspaceId === workspaceId) {
       allWorkspaceProjects.push(proj);
     }
   }
+
 
   // Filter pipeline
   let filtered = allWorkspaceProjects;

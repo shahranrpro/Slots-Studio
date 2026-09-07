@@ -127,14 +127,7 @@ export async function findProjectById(
 
     if (bySlot) return toDomain(bySlot as ProjectDbRow);
 
-    // Fallback search across database if workspace ID was arbitrary
-    if (idIsUuid) {
-      const { data: fallback } = await supabase.from("projects").select("*").eq("id", id).maybeSingle();
-      if (fallback) return toDomain(fallback as ProjectDbRow);
-    }
-    const { data: fallbackLegacy } = await supabase.from("projects").select("*").contains("metadata", { legacyId: id }).maybeSingle();
-    if (fallbackLegacy) return toDomain(fallbackLegacy as ProjectDbRow);
-
+    // Strictly enforce workspace isolation — never search across the entire database
     return null;
   }
 

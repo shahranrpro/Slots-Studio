@@ -151,21 +151,11 @@ export async function findWorkspacesByUserId(userId: string): Promise<Workspace[
     if (ws) result.push(ws);
   }
 
-  // If user is authenticated in development but has no explicit membership, associate with default workspace
-  if (result.length === 0 && userId) {
+  // In development, only associate the explicit dev seed user with ws_dev_seed.
+  // NEVER auto-inject a production user into the shared dev workspace.
+  if (result.length === 0 && userId === "usr_dev_seed" && process.env.NODE_ENV !== "production") {
     const defaultWs = workspacesMap.get("ws_dev_seed");
     if (defaultWs) {
-      const defaultMembers = membersMap.get("ws_dev_seed") || [];
-      if (!defaultMembers.some((m) => m.userId === userId)) {
-        defaultMembers.push({
-          id: `mem_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-          workspaceId: "ws_dev_seed",
-          userId,
-          role: "OWNER",
-          createdAt: new Date().toISOString(),
-        });
-        membersMap.set("ws_dev_seed", defaultMembers);
-      }
       result.push(defaultWs);
     }
   }
@@ -178,8 +168,8 @@ export async function findOnboardingStateByUserId(userId: string): Promise<Onboa
   const existing = onboardingStatesMap.get(userId);
   if (existing) return existing;
 
-  // In development, provision default completed onboarding for active authenticated user
-  if (userId) {
+  // In development, only auto-provision onboarding for the explicit dev seed user
+  if (userId === "usr_dev_seed" && process.env.NODE_ENV !== "production") {
     const autoOnboarding: OnboardingState = {
       userId,
       workspaceId: "ws_dev_seed",

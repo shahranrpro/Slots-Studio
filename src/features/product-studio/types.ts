@@ -27,6 +27,7 @@ export type ConceptReviewStatus = "REVIEW" | "APPROVED" | "REJECTED";
 
 export interface ProductConcept {
   id: string;
+  workspaceId?: string;
   projectId: string;
   candidateCode: string; // e.g. "CANDIDATE-01"
   title: string;

@@ -27,6 +27,9 @@ import { getSupabaseEnv } from "@/lib/supabase/env";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { createSessionData } from "./session";
 import { emailService } from "@/lib/email/service";
+import { sendSignupNotification, sendLoginNotification } from "@/lib/email/adminNotifications";
+import { createWorkspaceForUser } from "@/lib/workspace/service";
+
 
 export function sanitizeUser(user: UserWithPassword): User {
   return {
@@ -107,6 +110,14 @@ export async function loginUser(
     };
 
     const session = createSessionData(safeUser);
+
+    // Admin login notification (non-blocking — email failure must not block login)
+    sendLoginNotification({
+      userId: safeUser.id,
+      email: safeUser.email,
+      name: safeUser.name,
+    }).catch((err) => console.warn("[admin-notify] Login notification dispatch notice:", err));
+
     return {
       success: true,
       data: {
@@ -226,7 +237,24 @@ export async function signupUser(
   const safeUser = sanitizeUser(newUserRecord);
   const session = createSessionData(safeUser);
 
-  // Send welcome email (asynchronous & non-blocking)
+  // 1. Auto-provision a personal workspace for the new user.
+  //    This is the critical step that ensures every user gets their own isolated data space.
+  let newWorkspaceId: string | undefined;
+  let newWorkspaceName: string | undefined;
+  try {
+    const workspaceName = `${safeUser.name}'s Workspace`;
+    const workspaceResult = await createWorkspaceForUser(safeUser.id, workspaceName);
+    if (workspaceResult.success && workspaceResult.data?.workspace) {
+      newWorkspaceId = workspaceResult.data.workspace.id;
+      newWorkspaceName = workspaceResult.data.workspace.name;
+    }
+  } catch (err) {
+    // Workspace provisioning failure is logged but must not block signup completion.
+    // resolveAuthenticatedWorkspaceContext has a safety-net that will retry on first dashboard load.
+    console.warn("[signup] Workspace auto-provisioning notice:", err);
+  }
+
+  // 2. Send welcome email to the new user (asynchronous & non-blocking)
   emailService
     .sendWelcome(
       {
@@ -238,6 +266,16 @@ export async function signupUser(
     )
     .catch((err) => console.warn("Welcome email dispatch notice:", err));
 
+  // 3. Send admin signup notification (asynchronous & non-blocking)
+  sendSignupNotification({
+    userId: safeUser.id,
+    email: safeUser.email,
+    name: safeUser.name,
+    workspaceId: newWorkspaceId,
+    workspaceName: newWorkspaceName,
+    role: "OWNER",
+  }).catch((err) => console.warn("[admin-notify] Signup notification dispatch notice:", err));
+
   return {
     success: true,
     data: {
@@ -246,6 +284,7 @@ export async function signupUser(
     },
   };
 }
+
 
 export async function requestPasswordReset(
   emailInput: string

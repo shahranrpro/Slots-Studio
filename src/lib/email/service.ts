@@ -236,6 +236,30 @@ class EmailService {
       { userId: options?.userId }
     );
   }
+
+  /**
+   * Sends an admin notification email (signup or login) via the raw provider.
+   * Called exclusively from adminNotifications.ts — never from browser code.
+   */
+  public async sendAdminNotification(
+    to: string,
+    subject: string,
+    html: string,
+    text: string,
+    idempotencyKey: string,
+    template: EmailTemplateType,
+    options?: { userId?: string }
+  ): Promise<EmailSendResult> {
+    return this.executeSend(
+      template,
+      to,
+      subject,
+      idempotencyKey,
+      () => this.provider.sendRaw({ to, subject, html, text }),
+      { userId: options?.userId }
+    );
+  }
 }
 
 export const emailService = new EmailService();
+
